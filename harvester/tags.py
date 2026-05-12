@@ -8,6 +8,7 @@ CATEGORY_ORDER = [
     "castle",
     "monument",
     "memorial",
+    "tomb",
     "ruins",
     "fort",
     "city_gate",

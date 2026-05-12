@@ -14,12 +14,13 @@ COUNTRY_DIR = DATA_DIR / "countries"
 
 KEEP_TAGS = {
     "name", "name:en", "alt_name", "official_name",
-    "tourism", "amenity", "historic", "heritage", "memorial", "ruins",
+    "tourism", "amenity", "historic", "heritage", "memorial", "ruins", "tomb",
     "wikidata", "wikipedia", "image", "website", "url",
-    "start_date", "opening_hours", "phone", "email",
+    "start_date", "end_date", "opening_hours", "phone", "email",
     "addr:city", "addr:street", "addr:housenumber", "addr:postcode", "addr:country",
     "denomination", "religion", "artist_name", "artwork_type", "material",
     "building", "wheelchair", "operator",
+    "buried", "buried:wikidata", "buried:wikipedia",
 }
 
 
@@ -45,19 +46,23 @@ def to_feature(el):
     lonlat = coords(el)
     if not lonlat:
         return None
+    props = {
+        "osm_type": el["type"],
+        "osm_id": el["id"],
+        "category": categorize(tags),
+        "name": tags.get("name") or tags.get("name:en"),
+        "wikidata": tags.get("wikidata"),
+        "wikipedia": tags.get("wikipedia"),
+        "tags": slim_tags(tags),
+    }
+    buried_qid = tags.get("buried:wikidata")
+    if buried_qid:
+        props["buried_wikidata"] = buried_qid
     return {
         "type": "Feature",
         "id": f"{el['type']}/{el['id']}",
         "geometry": {"type": "Point", "coordinates": lonlat},
-        "properties": {
-            "osm_type": el["type"],
-            "osm_id": el["id"],
-            "category": categorize(tags),
-            "name": tags.get("name") or tags.get("name:en"),
-            "wikidata": tags.get("wikidata"),
-            "wikipedia": tags.get("wikipedia"),
-            "tags": slim_tags(tags),
-        },
+        "properties": props,
     }
 
 

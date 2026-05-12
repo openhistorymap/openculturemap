@@ -8,6 +8,7 @@ const CATEGORY_LABELS = {
   castle: "Castles",
   monument: "Monuments",
   memorial: "Memorials",
+  tomb: "Tombs",
   ruins: "Ruins",
   fort: "Forts",
   city_gate: "City gates",
@@ -48,6 +49,11 @@ const GLYPH_PATHS = {
     "M12 2 L14 6.5 L13.5 21 L10.5 21 L10 6.5 Z",
   memorial:
     "M8 4 H16 V7 L18 9 V15 L16 17 V22 H8 V17 L6 15 V9 L8 7 Z",
+  tomb:
+    "M5 8 L19 8 L18 11 L6 11 Z " +
+    "M4 11 H20 V20 H4 Z " +
+    "M3 20 H21 V22 H3 Z " +
+    "M8 13 H16 V14.5 H8 Z M8 16 H14 V17.5 H8 Z",
   ruins:
     "M5 22 V14 H8 V16 H10 V13 H13 V18 H15 V14 H18 V22 Z " +
     "M6 10 L8 9 L9 12 L11 10 L12 13 L14 11 L15 14 L17 12 L18 13 L17.5 14 L15.5 13.5 L14.5 16 L12.5 14 L11.5 16.5 L9.5 14.5 L8.5 17 L6.5 14.5 Z",
@@ -81,6 +87,7 @@ const CATEGORY_COLORS_LIGHT = {
   castle: "#8a3a2e",
   monument: "#566273",
   memorial: "#566273",
+  tomb: "#6a604d",
   ruins: "#a16e3c",
   fort: "#8a3a2e",
   city_gate: "#8a3a2e",
@@ -102,6 +109,7 @@ const CATEGORY_COLORS_DARK = {
   castle: "#d68573",
   monument: "#a3afc1",
   memorial: "#a3afc1",
+  tomb: "#c4b89c",
   ruins: "#dba67e",
   fort: "#d68573",
   city_gate: "#d68573",
@@ -540,6 +548,9 @@ function openDetail(feature) {
   const addr = formatAddress(tags);
   const links = buildLinks(p, tags);
 
+  const buriedQid = p.buried_wikidata || tags["buried:wikidata"] || null;
+  const buriedName = tags["buried"] || null;
+
   body.innerHTML = `
     <span class="detail-cat">
       <span class="cat-glyph">${inlineGlyph(category)}</span>
@@ -548,6 +559,7 @@ function openDetail(feature) {
     <h2 class="detail-title">${escapeHtml(p.name || "(unnamed place)")}</h2>
     <div class="detail-sub">${escapeHtml(addr || tags["addr:city"] || "")}</div>
     <div id="wd-slot"></div>
+    <div id="buried-slot"></div>
     <div class="detail-section">
       <h4>From OpenStreetMap</h4>
       <dl class="tag-grid">${renderTagRows(tags)}</dl>
@@ -558,32 +570,65 @@ function openDetail(feature) {
   detail.setAttribute("aria-hidden", "false");
 
   if (p.wikidata) {
-    const slot = document.getElementById("wd-slot");
-    slot.innerHTML = `
-      <div class="detail-section">
-        <h4>From Wikidata · ${escapeHtml(p.wikidata)}</h4>
-        <div class="skeleton lg"></div>
-        <div class="skeleton"></div>
-        <div class="skeleton" style="width:60%"></div>
-      </div>
-    `;
-    fetchWikidata(p.wikidata).then((data) => {
-      if (!data) {
-        slot.innerHTML = "";
-        return;
-      }
-      slot.innerHTML = `
-        <div class="detail-section">
-          <h4>From Wikidata · <a href="https://www.wikidata.org/wiki/${encodeURIComponent(p.wikidata)}" target="_blank" rel="noopener">${escapeHtml(p.wikidata)}</a></h4>
-          ${data.image ? `<img class="detail-image" src="${escapeAttr(data.image)}" alt="${escapeAttr(data.label || "")}" loading="lazy" />` : ""}
-          ${data.label ? `<p style="font-family:var(--font-display);font-size:20px;line-height:1.25;color:var(--ink);margin-bottom:8px;">${escapeHtml(data.label)}</p>` : ""}
-          ${data.desc ? `<p style="color:var(--ink-soft);">${escapeHtml(data.desc)}</p>` : ""}
-          ${data.inception ? `<p style="color:var(--ink-mute);font-style:italic;font-size:13px;">established ${escapeHtml(prettyDate(data.inception))}</p>` : ""}
-          ${data.wikipediaUrl ? `<p style="margin-top:8px;"><a href="${escapeAttr(data.wikipediaUrl)}" target="_blank" rel="noopener">Read more on Wikipedia →</a></p>` : ""}
-        </div>
-      `;
+    renderWdSlot(document.getElementById("wd-slot"), p.wikidata, {
+      heading: "From Wikidata",
+      dating: (d) => d.inception ? `established ${prettyDate(d.inception)}` : null,
     });
   }
+
+  if (buriedQid || buriedName) {
+    renderBuriedSlot(document.getElementById("buried-slot"), buriedQid, buriedName);
+  }
+}
+
+function renderWdSlot(slot, qid, opts) {
+  if (!slot) return;
+  slot.innerHTML = `
+    <div class="detail-section">
+      <h4>${escapeHtml(opts.heading)} · ${escapeHtml(qid)}</h4>
+      <div class="skeleton lg"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton" style="width:60%"></div>
+    </div>
+  `;
+  fetchWikidata(qid).then((data) => {
+    if (!data) { slot.innerHTML = ""; return; }
+    const dateLine = opts.dating ? opts.dating(data) : null;
+    slot.innerHTML = `
+      <div class="detail-section">
+        <h4>${escapeHtml(opts.heading)} · <a href="https://www.wikidata.org/wiki/${encodeURIComponent(qid)}" target="_blank" rel="noopener">${escapeHtml(qid)}</a></h4>
+        ${data.image ? `<img class="detail-image" src="${escapeAttr(data.image)}" alt="${escapeAttr(data.label || "")}" loading="lazy" />` : ""}
+        ${data.label ? `<p style="font-family:var(--font-display);font-size:20px;line-height:1.25;color:var(--ink);margin-bottom:8px;">${escapeHtml(data.label)}</p>` : ""}
+        ${data.desc ? `<p style="color:var(--ink-soft);">${escapeHtml(data.desc)}</p>` : ""}
+        ${dateLine ? `<p style="color:var(--ink-mute);font-style:italic;font-size:13px;">${escapeHtml(dateLine)}</p>` : ""}
+        ${data.wikipediaUrl ? `<p style="margin-top:8px;"><a href="${escapeAttr(data.wikipediaUrl)}" target="_blank" rel="noopener">Read more on Wikipedia →</a></p>` : ""}
+      </div>
+    `;
+  });
+}
+
+function renderBuriedSlot(slot, qid, fallbackName) {
+  if (!slot) return;
+  if (!qid) {
+    slot.innerHTML = `
+      <div class="detail-section">
+        <h4>Buried here</h4>
+        <p style="font-family:var(--font-display);font-size:18px;line-height:1.25;color:var(--ink);">${escapeHtml(fallbackName)}</p>
+      </div>
+    `;
+    return;
+  }
+  renderWdSlot(slot, qid, {
+    heading: "Buried here",
+    dating: (d) => {
+      const b = d.birth ? prettyDate(d.birth) : null;
+      const dt = d.death ? prettyDate(d.death) : null;
+      if (b && dt) return `${b} – ${dt}`;
+      if (b) return `b. ${b}`;
+      if (dt) return `d. ${dt}`;
+      return null;
+    },
+  });
 }
 
 function parseTags(v) {
@@ -627,7 +672,9 @@ const TAG_DISPLAY = {
   amenity: "kind",
   historic: "historic",
   heritage: "heritage",
+  tomb: "tomb type",
   start_date: "dating from",
+  end_date: "ending",
   opening_hours: "open",
   operator: "operated by",
   denomination: "denomination",
@@ -665,19 +712,25 @@ async function fetchWikidata(qid) {
     const label = ent.labels?.en?.value;
     const desc = ent.descriptions?.en?.value;
     const imageFile = ent.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
-    const inceptionRaw = ent.claims?.P571?.[0]?.mainsnak?.datavalue?.value?.time;
-    const inception = inceptionRaw ? inceptionRaw.replace(/^\+/, "").slice(0, 10) : null;
+    const inception = trimWdDate(ent.claims?.P571?.[0]?.mainsnak?.datavalue?.value?.time);
+    const birth = trimWdDate(ent.claims?.P569?.[0]?.mainsnak?.datavalue?.value?.time);
+    const death = trimWdDate(ent.claims?.P570?.[0]?.mainsnak?.datavalue?.value?.time);
     const wikipediaUrl = ent.sitelinks?.enwiki?.url || null;
     const image = imageFile
       ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(imageFile)}?width=720`
       : null;
-    const out = { label, desc, image, inception, wikipediaUrl };
+    const out = { label, desc, image, inception, birth, death, wikipediaUrl };
     wikidataCache.set(qid, out);
     return out;
   } catch (e) {
     wikidataCache.set(qid, null);
     return null;
   }
+}
+
+function trimWdDate(raw) {
+  if (!raw) return null;
+  return raw.replace(/^\+/, "").slice(0, 10);
 }
 
 function prettyDate(s) {

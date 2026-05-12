@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-12T05:42:39+00:00",
+  "generated_at": "2026-05-12T06:32:57+00:00",
   "countries": [
     {
       "code": "AT",
@@ -90,7 +90,7 @@
       "name": "Italy",
       "file": "countries/IT.geojson",
       "count": 79210,
-      "updated_at": "2026-05-12T05:42:39+00:00"
+      "updated_at": "2026-05-12T06:32:57+00:00"
     },
     {
       "code": "LV",
