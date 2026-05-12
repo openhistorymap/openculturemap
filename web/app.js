@@ -148,25 +148,35 @@ const colorExpr = (palette) => {
 
 const iconImageExpr = ["concat", "cat-", ["get", "category"]];
 
+function currentPalette() {
+  return state.theme === "dark" ? CATEGORY_COLORS_DARK : CATEGORY_COLORS_LIGHT;
+}
+
 async function buildImages() {
+  const palette = currentPalette();
+  const haloColor = state.theme === "dark" ? "#1a1612" : "#fbf7ef";
   await Promise.all(
-    Object.entries(GLYPH_PATHS).map(([name, d]) => addGlyphImage(name, d)),
+    Object.entries(GLYPH_PATHS).map(([name, d]) => {
+      const color = palette[name] || palette.other;
+      return addGlyphImage(name, d, color, haloColor);
+    }),
   );
 }
 
-function addGlyphImage(name, d) {
+function addGlyphImage(name, d, fill, halo) {
   return new Promise((resolve) => {
     const id = `cat-${name}`;
-    if (map.hasImage(id)) return resolve();
     const svg =
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64">` +
-      `<path d="${d}" fill="#000" fill-rule="evenodd"/>` +
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -3 30 30" width="96" height="96">` +
+      `<path d="${d}" fill="${halo}" fill-rule="evenodd" stroke="${halo}" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>` +
+      `<path d="${d}" fill="${fill}" fill-rule="evenodd"/>` +
       `</svg>`;
     const blob = new Blob([svg], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
-    const img = new Image(64, 64);
+    const img = new Image(96, 96);
     img.onload = () => {
-      if (!map.hasImage(id)) map.addImage(id, img, { sdf: true });
+      if (map.hasImage(id)) map.removeImage(id);
+      map.addImage(id, img);
       URL.revokeObjectURL(url);
       resolve();
     };
@@ -191,11 +201,52 @@ function addCustomLayers() {
     map.getSource(SOURCE_ID).setData(featureCollection(filteredFeatures()));
   }
 
-  const palette = state.theme === "dark" ? CATEGORY_COLORS_DARK : CATEGORY_COLORS_LIGHT;
-  const clusterFill = cssVar("--map-cluster-fill");
-  const clusterStroke = cssVar("--map-cluster-stroke");
-  const clusterText = cssVar("--map-cluster-text");
-  const markerStroke = cssVar("--map-marker-stroke");
+  const palette = currentPalette();
+  const clusterFill = readVarColor("--map-cluster-fill");
+  const clusterStroke = readVarColor("--map-cluster-stroke");
+  const clusterText = readVarColor("--map-cluster-text");
+  const dotStroke = state.theme === "dark" ? "rgba(20,16,12,0.7)" : "rgba(255,250,240,0.85)";
+
+  if (!map.getLayer("ocm-points-dot")) {
+    map.addLayer({
+      id: "ocm-points-dot",
+      type: "circle",
+      source: SOURCE_ID,
+      filter: ["!", ["has", "point_count"]],
+      paint: {
+        "circle-color": colorExpr(palette),
+        "circle-radius": [
+          "interpolate", ["linear"], ["zoom"],
+          3, 2.2, 6, 3, 10, 3.8, 14, 5, 18, 7,
+        ],
+        "circle-stroke-color": dotStroke,
+        "circle-stroke-width": 1,
+        "circle-opacity": 0.95,
+      },
+    });
+  } else {
+    map.setPaintProperty("ocm-points-dot", "circle-color", colorExpr(palette));
+    map.setPaintProperty("ocm-points-dot", "circle-stroke-color", dotStroke);
+  }
+
+  if (!map.getLayer("ocm-points")) {
+    map.addLayer({
+      id: "ocm-points",
+      type: "symbol",
+      source: SOURCE_ID,
+      filter: ["!", ["has", "point_count"]],
+      layout: {
+        "icon-image": iconImageExpr,
+        "icon-size": [
+          "interpolate", ["linear"], ["zoom"],
+          5, 0.18, 9, 0.26, 12, 0.34, 15, 0.45, 18, 0.60,
+        ],
+        "icon-allow-overlap": ["step", ["zoom"], false, 15, true],
+        "icon-ignore-placement": false,
+        "icon-padding": 0,
+      },
+    });
+  }
 
   if (!map.getLayer("ocm-clusters")) {
     map.addLayer({
@@ -213,6 +264,9 @@ function addCustomLayers() {
         ],
       },
     });
+  } else {
+    map.setPaintProperty("ocm-clusters", "circle-color", clusterFill);
+    map.setPaintProperty("ocm-clusters", "circle-stroke-color", clusterStroke);
   }
 
   if (!map.getLayer("ocm-cluster-count")) {
@@ -229,39 +283,23 @@ function addCustomLayers() {
       },
       paint: { "text-color": clusterText },
     });
-  }
-
-  if (!map.getLayer("ocm-points")) {
-    map.addLayer({
-      id: "ocm-points",
-      type: "symbol",
-      source: SOURCE_ID,
-      filter: ["!", ["has", "point_count"]],
-      layout: {
-        "icon-image": iconImageExpr,
-        "icon-size": [
-          "interpolate", ["linear"], ["zoom"],
-          3, 0.22, 6, 0.30, 10, 0.40, 14, 0.55, 18, 0.75,
-        ],
-        "icon-allow-overlap": false,
-        "icon-ignore-placement": false,
-        "icon-padding": 2,
-      },
-      paint: {
-        "icon-color": colorExpr(palette),
-        "icon-halo-color": markerStroke,
-        "icon-halo-width": 1.2,
-      },
-    });
   } else {
-    map.setPaintProperty("ocm-points", "icon-color", colorExpr(palette));
-    map.setPaintProperty("ocm-points", "icon-halo-color", markerStroke);
-    map.setPaintProperty("ocm-clusters", "circle-color", clusterFill);
-    map.setPaintProperty("ocm-clusters", "circle-stroke-color", clusterStroke);
     map.setPaintProperty("ocm-cluster-count", "text-color", clusterText);
   }
 
   wireMapEvents();
+}
+
+function readVarColor(varName) {
+  const probe = document.createElement("span");
+  probe.style.color = `var(${varName})`;
+  probe.style.position = "absolute";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  document.body.appendChild(probe);
+  const c = getComputedStyle(probe).color || "rgb(196,106,60)";
+  probe.remove();
+  return c;
 }
 
 let mapEventsWired = false;
@@ -277,16 +315,15 @@ function wireMapEvents() {
     });
   });
 
-  map.on("click", "ocm-points", (e) => openDetail(e.features[0]));
+  map.on("click", (e) => {
+    const hits = map.queryRenderedFeatures(e.point, { layers: ["ocm-points", "ocm-points-dot"] });
+    if (hits.length) openDetail(hits[0]);
+  });
 
-  for (const id of ["ocm-points", "ocm-clusters"]) {
+  for (const id of ["ocm-points", "ocm-points-dot", "ocm-clusters"]) {
     map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
     map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
   }
-}
-
-function cssVar(name) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
 function featureCollection(features) {
