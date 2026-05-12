@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -85,23 +86,50 @@ def harvest_country(cc):
     return features
 
 
+def load_manifest():
+    path = DATA_DIR / "manifest.json"
+    if not path.exists():
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            m = json.load(fh)
+        return {c["code"]: c for c in m.get("countries", []) if "code" in c}
+    except Exception:
+        return {}
+
+
 def main():
     COUNTRY_DIR.mkdir(parents=True, exist_ok=True)
-    manifest = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "countries": [],
-    }
-    for i, (cc, name) in enumerate(EU_PLUS):
+
+    only = os.environ.get("OCM_ONLY", "").strip()
+    selected = {c.strip().upper() for c in only.split(",") if c.strip()} if only else None
+
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    prior = load_manifest()
+    manifest = {"generated_at": now, "countries": []}
+
+    targets = EU_PLUS if not selected else [(cc, name) for cc, name in EU_PLUS if cc in selected]
+    if selected:
+        print(f"limited run: {sorted(selected)}", flush=True)
+
+    targeted_codes = {cc for cc, _ in targets}
+
+    for cc, name in EU_PLUS:
+        if cc not in targeted_codes:
+            entry = prior.get(cc) or {"code": cc, "name": name, "file": f"countries/{cc}.geojson", "count": 0}
+            manifest["countries"].append(entry)
+
+    for i, (cc, name) in enumerate(targets):
         path = COUNTRY_DIR / f"{cc}.geojson"
         entry = {"code": cc, "name": name, "file": f"countries/{cc}.geojson"}
-        print(f"[{i+1}/{len(EU_PLUS)}] {cc} {name}...", flush=True)
+        print(f"[{i+1}/{len(targets)}] {cc} {name}...", flush=True)
         try:
             features = harvest_country(cc)
             fc = {"type": "FeatureCollection", "features": features}
             with path.open("w", encoding="utf-8") as fh:
                 json.dump(fc, fh, ensure_ascii=False, separators=(",", ":"))
             entry["count"] = len(features)
-            entry["updated_at"] = manifest["generated_at"]
+            entry["updated_at"] = now
             print(f"    -> {len(features)} features", flush=True)
         except Exception as e:
             print(f"    !! FAILED: {e}", flush=True)
@@ -113,7 +141,11 @@ def main():
                 entry["count"] = 0
                 entry["error"] = str(e)
         manifest["countries"].append(entry)
-        time.sleep(8)
+        if i < len(targets) - 1:
+            time.sleep(8)
+
+    manifest["countries"].sort(key=lambda c: [cc for cc, _ in EU_PLUS].index(c["code"]) if c["code"] in [cc for cc, _ in EU_PLUS] else 999)
+
     with (DATA_DIR / "manifest.json").open("w", encoding="utf-8") as fh:
         json.dump(manifest, fh, ensure_ascii=False, indent=2)
     print("done.", flush=True)
