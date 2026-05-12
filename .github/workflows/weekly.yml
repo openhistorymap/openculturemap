@@ -4,11 +4,6 @@ on:
   schedule:
     - cron: "0 3 * * 0"
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "web/**"
-      - ".github/workflows/weekly.yml"
 
 permissions:
   contents: write
@@ -21,7 +16,6 @@ concurrency:
 
 jobs:
   harvest:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +46,6 @@ jobs:
 
   deploy:
     needs: [harvest]
-    if: always() && (needs.harvest.result == 'success' || needs.harvest.result == 'skipped')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
