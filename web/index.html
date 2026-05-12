@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>openculturemap — cultural OSM points of interest</title>
+  <meta name="description" content="A weekly-refreshed cultural map of Europe: museums, archaeological sites, art and heritage from OpenStreetMap, enriched with Wikidata." />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◐</span>
+      <span class="brand-name">openculturemap</span>
+    </div>
+    <div class="topbar-meta">
+      <span id="meta-updated">loading…</span>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <section class="panel">
+      <label class="panel-label" for="country-select">country</label>
+      <select id="country-select" disabled>
+        <option>loading…</option>
+      </select>
+      <div class="panel-stat" id="country-stat"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="panel-label">categories</span>
+        <button class="link-btn" id="cat-all">all</button>
+        <button class="link-btn" id="cat-none">none</button>
+      </div>
+      <div id="cat-list" class="cat-list"></div>
+    </section>
+
+    <section class="panel hint-panel">
+      <p>Click any point for OSM details. If the place has a <code>wikidata</code> tag, a short description and image are fetched on demand.</p>
+    </section>
+  </aside>
+
+  <main id="map"></main>
+
+  <section class="detail" id="detail" aria-hidden="true">
+    <button class="detail-close" id="detail-close" aria-label="close">×</button>
+    <div class="detail-body" id="detail-body"></div>
+  </section>
+
+  <footer class="footer">
+    Made with &lt;3 in Bologna by <a href="https://openhistorymap.org" target="_blank" rel="noopener">OpenHistoryMap</a>
+    <span class="footer-sep">·</span>
+    data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>
+    <span class="footer-sep">·</span>
+    enrichment via <a href="https://www.wikidata.org/" target="_blank" rel="noopener">Wikidata</a>
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
