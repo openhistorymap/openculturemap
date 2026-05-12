@@ -1,60 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>openculturemap — cultural OSM points of interest</title>
-  <meta name="description" content="A weekly-refreshed cultural map of Europe: museums, archaeological sites, art and heritage from OpenStreetMap, enriched with Wikidata." />
+  <title>openculturemap — a wandering atlas of Europe's culture</title>
+  <meta name="description" content="An evolving atlas of museums, archaeological sites, monuments and art across Europe — assembled weekly from OpenStreetMap and Wikidata." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Vollkorn:ital,wght@0,400..900;1,400..900&display=swap" />
+
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="style.css" />
+
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("ocm-theme");
+        if (saved === "dark" || saved === "light") {
+          document.documentElement.setAttribute("data-theme", saved);
+        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">◐</span>
-      <span class="brand-name">openculturemap</span>
-    </div>
-    <div class="topbar-meta">
-      <span id="meta-updated">loading…</span>
+    <a class="brand" href=".">
+      <svg class="brand-rose" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" class="rose-ring" />
+        <path d="M16 3 L19 16 L16 29 L13 16 Z" class="rose-arrow rose-arrow-vertical" />
+        <path d="M3 16 L16 13 L29 16 L16 19 Z" class="rose-arrow rose-arrow-horizontal" />
+        <path d="M16 8 L17 15 L16 22 L15 15 Z" class="rose-arrow-inner" />
+        <circle cx="16" cy="16" r="1.4" class="rose-pin" />
+      </svg>
+      <span class="brand-text">openculturemap</span>
+    </a>
+
+    <div class="topbar-right">
+      <div class="meta">
+        <span id="meta-updated">loading…</span>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.5" />
+          <g stroke-linecap="round">
+            <line x1="12" y1="2.5" x2="12" y2="5" />
+            <line x1="12" y1="19" x2="12" y2="21.5" />
+            <line x1="2.5" y1="12" x2="5" y2="12" />
+            <line x1="19" y1="12" x2="21.5" y2="12" />
+            <line x1="5.2" y1="5.2" x2="7" y2="7" />
+            <line x1="17" y1="17" x2="18.8" y2="18.8" />
+            <line x1="5.2" y1="18.8" x2="7" y2="17" />
+            <line x1="17" y1="7" x2="18.8" y2="5.2" />
+          </g>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 14.5 A8.5 8.5 0 0 1 9.5 4 A8.5 8.5 0 1 0 20 14.5 Z" />
+        </svg>
+      </button>
     </div>
   </header>
 
-  <aside class="sidebar" id="sidebar">
-    <section class="panel">
-      <label class="panel-label" for="country-select">country</label>
-      <select id="country-select" disabled>
-        <option>loading…</option>
-      </select>
-      <div class="panel-stat" id="country-stat"></div>
+  <aside class="margin" id="margin">
+    <section class="m-section">
+      <h2 class="m-title">Where</h2>
+      <div class="select-wrap">
+        <select id="country-select" disabled>
+          <option>loading the atlas…</option>
+        </select>
+        <svg class="select-chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 L6 8.5 L10 4.5" /></svg>
+      </div>
+      <div class="m-stat" id="country-stat"></div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <span class="panel-label">categories</span>
-        <button class="link-btn" id="cat-all">all</button>
-        <button class="link-btn" id="cat-none">none</button>
+    <hr class="m-rule" />
+
+    <section class="m-section">
+      <div class="m-section-head">
+        <h2 class="m-title">What</h2>
+        <div class="m-link-group">
+          <button class="link-btn" id="cat-all">all</button>
+          <span class="link-sep">·</span>
+          <button class="link-btn" id="cat-none">none</button>
+        </div>
       </div>
       <div id="cat-list" class="cat-list"></div>
     </section>
 
-    <section class="panel hint-panel">
-      <p>Click any point for OSM details. If the place has a <code>wikidata</code> tag, a short description and image are fetched on demand.</p>
+    <hr class="m-rule" />
+
+    <section class="m-section m-hint">
+      <p><em>Tap any point</em> for OSM details. When a place is tagged with a <code>wikidata</code> identifier, a short note and a picture are fetched on demand.</p>
+      <p class="m-fineprint">Data is harvested every Sunday from <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a> via the Overpass API and enriched with <a href="https://www.wikidata.org" target="_blank" rel="noopener">Wikidata</a>.</p>
     </section>
   </aside>
 
-  <main id="map"></main>
+  <main id="map">
+    <svg class="compass" viewBox="0 0 110 110" aria-hidden="true">
+      <circle cx="55" cy="55" r="48" class="compass-outer" />
+      <circle cx="55" cy="55" r="36" class="compass-inner" />
+      <path d="M55 12 L60 55 L55 98 L50 55 Z" class="compass-blade compass-blade-major" />
+      <path d="M12 55 L55 50 L98 55 L55 60 Z" class="compass-blade compass-blade-minor" />
+      <path d="M27 27 L55 50 L83 83 L55 60 Z" class="compass-blade compass-blade-diag" />
+      <path d="M83 27 L55 50 L27 83 L55 60 Z" class="compass-blade compass-blade-diag" />
+      <text x="55" y="9" text-anchor="middle" class="compass-n">N</text>
+      <circle cx="55" cy="55" r="2.2" class="compass-pin" />
+    </svg>
+  </main>
 
   <section class="detail" id="detail" aria-hidden="true">
-    <button class="detail-close" id="detail-close" aria-label="close">×</button>
+    <button class="detail-close" id="detail-close" aria-label="close">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3 L13 13 M13 3 L3 13" /></svg>
+    </button>
     <div class="detail-body" id="detail-body"></div>
   </section>
 
   <footer class="footer">
-    Made with &lt;3 in Bologna by <a href="https://openhistorymap.org" target="_blank" rel="noopener">OpenHistoryMap</a>
+    <span>Made with <span class="heart">&lt;3</span> in Bologna by <a href="https://openhistorymap.org" target="_blank" rel="noopener">OpenHistoryMap</a></span>
     <span class="footer-sep">·</span>
-    data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>
+    <span>data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></span>
     <span class="footer-sep">·</span>
-    enrichment via <a href="https://www.wikidata.org/" target="_blank" rel="noopener">Wikidata</a>
+    <span>notes from <a href="https://www.wikidata.org/" target="_blank" rel="noopener">Wikidata</a></span>
+    <span class="footer-sep">·</span>
+    <a href="https://github.com/openhistorymap/openculturemap" target="_blank" rel="noopener">source</a>
   </footer>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
