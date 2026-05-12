@@ -279,6 +279,53 @@ a:hover { color: var(--terracotta); text-decoration: underline; text-underline-o
   font-variant-numeric: tabular-nums;
 }
 
+.locate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-xs);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--terracotta-2);
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: color .2s ease;
+  align-self: flex-start;
+}
+.locate-btn:hover { color: var(--terracotta); }
+.locate-btn:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.locate-btn svg { width: 14px; height: 14px; fill: currentColor; flex: none; }
+.locate-btn.locating { opacity: 0.55; cursor: wait; }
+.locate-btn.locating svg { animation: locate-spin 1s linear infinite; }
+@keyframes locate-spin { to { transform: rotate(360deg); } }
+
+.you-are-here {
+  width: 18px;
+  height: 18px;
+  background: var(--cobalt);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px oklch(from var(--cobalt) l c h / 0.22),
+              0 2px 8px oklch(0 0 0 / 0.3);
+  position: relative;
+}
+.you-are-here::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: var(--cobalt);
+  opacity: 0.35;
+  animation: you-are-here-pulse 1.8s ease-out infinite;
+}
+@keyframes you-are-here-pulse {
+  0%   { transform: scale(0.55); opacity: 0.45; }
+  100% { transform: scale(2.4);  opacity: 0; }
+}
+
 .m-link-group {
   display: inline-flex;
   align-items: baseline;

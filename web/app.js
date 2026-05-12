@@ -134,6 +134,9 @@ const state = {
   features: [],
   enabled: new Set(CATEGORY_ORDER),
   theme: document.documentElement.getAttribute("data-theme") || "light",
+  selectedFeatureId: null,
+  youAreHereMarker: null,
+  suppressNextMoveUrlWrite: false,
 };
 
 const map = new maplibregl.Map({
@@ -383,22 +386,73 @@ async function bootstrap() {
   }
   renderMeta();
   renderCountries();
-  const initial = pickInitialCountry();
-  if (initial) await loadCountry(initial);
-  else renderCategories();
+
+  const url = readUrl();
+  const initial = pickInitialCountry(url.c);
+  if (initial) {
+    await loadCountry(initial, { skipFit: !!(url.lat != null && url.lon != null && url.z != null) });
+  } else {
+    renderCategories();
+  }
+
+  if (url.lat != null && url.lon != null && url.z != null) {
+    state.suppressNextMoveUrlWrite = true;
+    map.jumpTo({ center: [url.lon, url.lat], zoom: url.z });
+  }
+
+  if (url.p) {
+    const f = state.features.find((x) => x.id === url.p);
+    if (f) {
+      state.selectedFeatureId = url.p;
+      openDetail(f, { fromUrl: true });
+    }
+  }
+
+  writeUrl();
 }
 
-function pickInitialCountry() {
+function pickInitialCountry(preferredCode) {
   const list = state.manifest?.countries || [];
   if (!list.length) return null;
-  const fromHash = (location.hash || "").replace("#", "").toUpperCase();
-  if (fromHash && list.find((c) => c.code === fromHash)) return fromHash;
+  if (preferredCode && list.find((c) => c.code === preferredCode)) return preferredCode;
   const withData = list.filter((c) => (c.count || 0) > 0);
   if (withData.length) {
     const it = withData.find((c) => c.code === "IT");
     return (it || withData[0]).code;
   }
   return list[0].code;
+}
+
+function readUrl() {
+  let h = (location.hash || "").replace(/^#/, "");
+  if (!h) return {};
+  if (/^[A-Za-z]{2}$/.test(h)) return { c: h.toUpperCase() };
+  const params = new URLSearchParams(h);
+  const out = {};
+  const c = params.get("c"); if (c) out.c = c.toUpperCase();
+  const lat = parseFloat(params.get("lat")); if (Number.isFinite(lat)) out.lat = lat;
+  const lon = parseFloat(params.get("lon")); if (Number.isFinite(lon)) out.lon = lon;
+  const z = parseFloat(params.get("z")); if (Number.isFinite(z)) out.z = z;
+  const p = params.get("p"); if (p) out.p = p;
+  return out;
+}
+
+function writeUrl({ push = false } = {}) {
+  const params = new URLSearchParams();
+  if (state.current?.code) params.set("c", state.current.code);
+  if (map && typeof map.getCenter === "function") {
+    try {
+      const c = map.getCenter();
+      params.set("lat", c.lat.toFixed(4));
+      params.set("lon", c.lng.toFixed(4));
+      params.set("z", map.getZoom().toFixed(2));
+    } catch (e) {}
+  }
+  if (state.selectedFeatureId) params.set("p", state.selectedFeatureId);
+  const target = "#" + params.toString();
+  if (target === location.hash) return;
+  if (push) history.pushState(null, "", target);
+  else history.replaceState(null, "", target);
 }
 
 function renderMeta() {
@@ -431,10 +485,14 @@ function renderCountries() {
     sel.appendChild(opt);
   }
   sel.disabled = false;
-  sel.onchange = (e) => loadCountry(e.target.value);
+  sel.onchange = (e) => {
+    state.selectedFeatureId = null;
+    closeDetailUI();
+    loadCountry(e.target.value, { pushHistory: true });
+  };
 }
 
-async function loadCountry(code) {
+async function loadCountry(code, { skipFit = false, pushHistory = false } = {}) {
   const entry = (state.manifest?.countries || []).find((c) => c.code === code);
   if (!entry) return;
   state.current = entry;
@@ -445,12 +503,12 @@ async function loadCountry(code) {
   } else {
     stat.textContent = "no data gathered yet";
   }
-  history.replaceState(null, "", `#${code}`);
 
   if (!entry.file || !entry.count) {
     state.features = [];
     applyFilter();
     renderCategories();
+    writeUrl({ push: pushHistory });
     return;
   }
 
@@ -463,7 +521,11 @@ async function loadCountry(code) {
   }
   renderCategories();
   applyFilter();
-  fitToCountry();
+  if (!skipFit) {
+    state.suppressNextMoveUrlWrite = true;
+    fitToCountry();
+  }
+  writeUrl({ push: pushHistory });
 }
 
 function fitToCountry() {
@@ -537,10 +599,14 @@ function applyFilter() {
 
 // ── Detail panel ──────────────────────────────────────────────
 
-function openDetail(feature) {
+function openDetail(feature, { fromUrl = false } = {}) {
   const detail = document.getElementById("detail");
   const body = document.getElementById("detail-body");
   const p = feature.properties || {};
+  if (!fromUrl) {
+    state.selectedFeatureId = feature.id;
+    writeUrl({ push: true });
+  }
   const tags = parseTags(p.tags);
   const category = normalizeCat(p.category);
   const catLabel = CATEGORY_LABELS[category] || category;
@@ -753,8 +819,88 @@ function escapeHtml(s) {
 }
 function escapeAttr(s) { return escapeHtml(s); }
 
-document.getElementById("detail-close").addEventListener("click", () => {
+function closeDetailUI() {
   const d = document.getElementById("detail");
   d.classList.remove("open");
   d.setAttribute("aria-hidden", "true");
+}
+
+document.getElementById("detail-close").addEventListener("click", () => {
+  closeDetailUI();
+  if (state.selectedFeatureId) {
+    state.selectedFeatureId = null;
+    writeUrl();
+  }
+});
+
+map.on("moveend", () => {
+  if (state.suppressNextMoveUrlWrite) {
+    state.suppressNextMoveUrlWrite = false;
+    return;
+  }
+  writeUrl();
+});
+
+window.addEventListener("popstate", () => {
+  const url = readUrl();
+  const wantPid = url.p || null;
+  const wantCountry = url.c || null;
+
+  const apply = async () => {
+    if (wantCountry && wantCountry !== state.current?.code) {
+      const skipFit = url.lat != null && url.lon != null && url.z != null;
+      await loadCountry(wantCountry, { skipFit });
+    }
+    if (url.lat != null && url.lon != null && url.z != null) {
+      state.suppressNextMoveUrlWrite = true;
+      map.jumpTo({ center: [url.lon, url.lat], zoom: url.z });
+    }
+    if (wantPid !== state.selectedFeatureId) {
+      if (wantPid) {
+        const f = state.features.find((x) => x.id === wantPid);
+        if (f) {
+          state.selectedFeatureId = wantPid;
+          openDetail(f, { fromUrl: true });
+        }
+      } else {
+        state.selectedFeatureId = null;
+        closeDetailUI();
+      }
+    }
+  };
+  apply();
+});
+
+// ── Geolocation ────────────────────────────────────────────────
+
+document.getElementById("locate-btn").addEventListener("click", () => {
+  const btn = document.getElementById("locate-btn");
+  if (!navigator.geolocation) {
+    btn.querySelector("span").textContent = "geolocation unsupported";
+    return;
+  }
+  btn.classList.add("locating");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      btn.classList.remove("locating");
+      const { latitude, longitude } = pos.coords;
+      if (state.youAreHereMarker) state.youAreHereMarker.remove();
+      const el = document.createElement("div");
+      el.className = "you-are-here";
+      state.youAreHereMarker = new maplibregl.Marker({ element: el, anchor: "center" })
+        .setLngLat([longitude, latitude])
+        .setPopup(new maplibregl.Popup({ offset: 18, closeButton: false }).setText("you are here"))
+        .addTo(map);
+      map.flyTo({ center: [longitude, latitude], zoom: 12, duration: 1200 });
+    },
+    (err) => {
+      btn.classList.remove("locating");
+      const label = btn.querySelector("span");
+      label.textContent = err.code === err.PERMISSION_DENIED
+        ? "location permission denied"
+        : "couldn't find you";
+      setTimeout(() => { label.textContent = "Where am I?"; }, 4000);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+  );
 });
