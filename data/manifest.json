@@ -1,75 +1,75 @@
 {
-  "generated_at": "2026-08-30T03:15:40+00:00",
+  "generated_at": "2026-09-06T03:15:52+00:00",
   "countries": [
     {
       "code": "AT",
       "name": "Austria",
       "file": "countries/AT.geojson",
-      "count": 35599,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 35672,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "BE",
       "name": "Belgium",
       "file": "countries/BE.geojson",
-      "count": 24210,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 24265,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "BG",
       "name": "Bulgaria",
       "file": "countries/BG.geojson",
-      "count": 5165,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 5197,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "HR",
       "name": "Croatia",
       "file": "countries/HR.geojson",
-      "count": 5446,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 5492,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "CY",
       "name": "Cyprus",
       "file": "countries/CY.geojson",
       "count": 1041,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "CZ",
       "name": "Czechia",
       "file": "countries/CZ.geojson",
-      "count": 86026,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 86313,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "DK",
       "name": "Denmark",
       "file": "countries/DK.geojson",
-      "count": 14527,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 14530,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "EE",
       "name": "Estonia",
       "file": "countries/EE.geojson",
       "count": 2533,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "FI",
       "name": "Finland",
       "file": "countries/FI.geojson",
-      "count": 8765,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 8771,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "FR",
       "name": "France",
       "file": "countries/FR.geojson",
       "count": 0,
-      "error": "all overpass mirrors failed: https://overpass.private.coffee/api/interpreter -> 500 Server Error: Internal Server Error for url: https://overpass.private.coffee/api/interpreter"
+      "error": "all overpass mirrors failed: https://overpass.private.coffee/api/interpreter -> HTTPSConnectionPool(host='overpass.private.coffee', port=443): Read timed out. (read timeout=960)"
     },
     {
       "code": "DE",
@@ -82,141 +82,141 @@
       "code": "GR",
       "name": "Greece",
       "file": "countries/GR.geojson",
-      "count": 11000,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 10963,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "HU",
       "name": "Hungary",
       "file": "countries/HU.geojson",
-      "count": 21662,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 21667,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "IE",
       "name": "Ireland",
       "file": "countries/IE.geojson",
-      "count": 14846,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 14942,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "IT",
       "name": "Italy",
       "file": "countries/IT.geojson",
-      "count": 81077,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 81195,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "LV",
       "name": "Latvia",
       "file": "countries/LV.geojson",
-      "count": 3822,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 3808,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "LT",
       "name": "Lithuania",
       "file": "countries/LT.geojson",
-      "count": 5374,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 5376,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "LU",
       "name": "Luxembourg",
       "file": "countries/LU.geojson",
-      "count": 1858,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 1861,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "MT",
       "name": "Malta",
       "file": "countries/MT.geojson",
-      "count": 724,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 727,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "NL",
       "name": "Netherlands",
       "file": "countries/NL.geojson",
-      "count": 25880,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 25974,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "PL",
       "name": "Poland",
       "file": "countries/PL.geojson",
-      "count": 63028,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 63184,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "PT",
       "name": "Portugal",
       "file": "countries/PT.geojson",
-      "count": 17112,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 17120,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "RO",
       "name": "Romania",
       "file": "countries/RO.geojson",
-      "count": 8542,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 8553,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "SK",
       "name": "Slovakia",
       "file": "countries/SK.geojson",
-      "count": 15398,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 15424,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "SI",
       "name": "Slovenia",
       "file": "countries/SI.geojson",
-      "count": 5076,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 5082,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "ES",
       "name": "Spain",
       "file": "countries/ES.geojson",
-      "count": 66538,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 66588,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "SE",
       "name": "Sweden",
       "file": "countries/SE.geojson",
-      "count": 9948,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 9955,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "GB",
       "name": "United Kingdom",
       "file": "countries/GB.geojson",
-      "count": 74757,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 74811,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "CH",
       "name": "Switzerland",
       "file": "countries/CH.geojson",
-      "count": 14406,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 14477,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "NO",
       "name": "Norway",
       "file": "countries/NO.geojson",
-      "count": 33598,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 33600,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     },
     {
       "code": "IS",
       "name": "Iceland",
       "file": "countries/IS.geojson",
-      "count": 822,
-      "updated_at": "2026-08-30T03:15:40+00:00"
+      "count": 827,
+      "updated_at": "2026-09-06T03:15:52+00:00"
     }
   ]
 }
